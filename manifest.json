@@ -1,0 +1,24 @@
+{
+  "name" : "Callrank Recorder",
+  "author": "Eric Garcia",
+  "version" : "0.1",
+  "manifest_version" : 2,
+  "description" : "Record the audio from a call and upload it",
+  "background": {
+    "scripts": ["background.js", "RecordRTC.js"],
+	  "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["jquery-2.2.0.min.js","contentscript.js"]
+    }
+  ],
+  "browser_action" : {
+		"default_icon" : "images/tabCapture22.png",
+		"default_title" : "Share this tab!"
+	},
+  "permissions": [
+    "activeTab", "tabCapture"
+  ]
+}
