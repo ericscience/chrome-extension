@@ -1,15 +1,27 @@
 // TODO: come up with a better way to handle user clicking the button in more than one tab
 var tabId;
+var recordingTimeout = 3000;
+var incomingClip;
+var outgoingClip;
 
 chrome.browserAction.onClicked.addListener(function () {
   sendToCurrentTab({ action: "append-iframe"});
 });
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
-   if (msg.action == 'clickme') {
-      captureTab();
-   }
+  if (msg.action == 'clickme') {
+    // capture the incoming audio from the current tab
+    captureTab();
+    // capture the outgoing audio from the microphone
+    // captureMicrophone();
+  }
 });
+
+// function captureMicrophone(recordingTimeout) {
+//   var config = { 'worker_path': '../lib/worker.min.js' };
+//   AudioRecorder.init(config);
+//   AudioRecorder.record();
+// }
 
 function sendToCurrentTab(message) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
@@ -27,7 +39,6 @@ function captureTab() {
     console.log("already running!")
     sendToGlobalTab({ action: "already-running"});
   } else {
-    // capture the incoming audio from the current tab
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
       tabId = tabs[0].id
       chrome.tabCapture.capture({audio: true, video: false}, gotIncomingStream);
@@ -48,14 +59,14 @@ function recordStream(stream, name) {
       'worker_path': '../lib/worker.min.js',
       'stream': stream
   };
-  AudioRecorder.init(config);
-  AudioRecorder.record();
+  var recorder = new AudioRecorder(config);
+  recorder.record();
 
-  setTimeout(function(){ stopRecording(); }, 3000);
+  setTimeout(function(){ stopRecording(); }, recordingTimeout);
   function stopRecording() {
-    AudioRecorder.stopRecording(function () {});
+    recorder.stopRecording(function () {});
 
-    var samples = AudioRecorder.getClip().samples
+    var samples = recorder.getClip().samples
     var binary = FileHandler.speexFile(samples);
     var array = new Uint8Array(binary.length);
     for( var i = 0; i < binary.length; i++ ) { array[i] = binary.charCodeAt(i) };

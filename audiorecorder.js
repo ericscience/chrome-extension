@@ -1891,266 +1891,131 @@ var Clip = {
         clip.finalized = true;
     }
 };
-// The HTML5 Audio middleware that does the recording in modern browsers
-var Html5Audio = {
-    DEFAULT_WORKER_PATH: 'worker.js',
-    worker: undefined,
 
-    audioContext: undefined,
-    playingSources: [],
+function AudioRecorder(config) {
+	DEFAULT_WORKER_PATH = 'worker.js'
+	this.clip = undefined;
+  this.worker = undefined;
+  this.playingSources = [];
+  this.ready = false;
+  this.recording = false;
+	this.audioContext = new AudioContext();
+	if (config && config.stream) {
+		this.useStream(config.stream)
+	} else {
+		navigator.getUserMedia({audio: true}, this.useStream, function(err){});
+	}
 
-    ready: false,
-    recording: false,
+  var worker_path = (config && config.worker_path) || DEFAULT_WORKER_PATH;
+  try {
+    this.worker = new Worker(worker_path);
+    this.worker.onmessage = this.handleMessage.bind(this)
+  } catch(error) {
+    console.error(error);
+  }
+}
 
-    init: function(config) {
-				console.log(window.location.pathname)
+// Called by init with a MediaStream object
+AudioRecorder.prototype.useStream = function(stream) {
+  var mediaStreamSource = this.audioContext.createMediaStreamSource(stream);
+  var context = mediaStreamSource.context;
 
-        Html5Audio.audioContext = new AudioContext();
-				if (config && config.stream) {
-					Html5Audio._useStream(config.stream)
-				} else {
-					navigator.getUserMedia({audio: true}, Html5Audio._useStream, function(err){});
-				}
+  var bufferLen = 4 * 4096;
+  var numChannelsIn = 1;
+  var numChannelsOut = 1;
+  var node = context.createScriptProcessor(bufferLen, numChannelsIn, numChannelsOut);
+  node.onaudioprocess = this.handleAudio.bind(this);
 
-        var worker_path = (config && config.worker_path) || Html5Audio.DEFAULT_WORKER_PATH;
-        try {
-            Html5Audio.worker = new Worker(worker_path);
-            Html5Audio.worker.onmessage = Html5Audio._handleMessage;
-        } catch(error) {
-            console.error(error);
-        }
-    },
+  mediaStreamSource.connect(node);
+  node.connect(context.destination);
 
-    // Called by init with a MediaStream object
-    _useStream: function(stream) {
-        var mediaStreamSource = Html5Audio.audioContext.createMediaStreamSource(stream);
-        var context = mediaStreamSource.context;
-
-        var bufferLen = 4 * 4096;
-        var numChannelsIn = 1;
-        var numChannelsOut = 1;
-        var node = context.createScriptProcessor(bufferLen, numChannelsIn, numChannelsOut);
-        node.onaudioprocess = Html5Audio._handleAudio;
-
-        mediaStreamSource.connect(node);
-        node.connect(context.destination);
-
-        Html5Audio.ready = true;
-    },
-
-    _handleAudio: function(event) {
-        // Buffer has length specified in _useStream
-        var buffer = event.inputBuffer.getChannelData(0);
-        if (Html5Audio.recording) {
-            // Add the samples immediately to the Clip
-            Clip.addSamples(AudioRecorder.clip, buffer);
-
-            // In the background, in multiples of 160, encode the samples
-            // And push the encoded data back into the Clip ASAP.
-            Html5Audio.worker.postMessage({
-                command: 'put',
-                buffer: buffer
-            });
-        }
-    },
-
-    _handleMessage: function(event) {
-        switch(event.data.command) {
-            case 'speex':
-            var data = event.data.data;
-            Clip.addSpeex(AudioRecorder.clip, data);
-            break;
-
-            case 'finalized':
-            Clip.finalize(AudioRecorder.clip);
-            if (Html5Audio.cb) Html5Audio.cb(AudioRecorder.clip);
-            break;
-
-            case 'cleared':
-            Clip.setSamples(AudioRecorder.clip, []);
-            break;
-
-            case 'print':
-            console.log(event.data.message);
-            break;
-        }
-    },
-
-    record: function() {
-        Html5Audio.recording = true;
-    },
-
-    stopRecording: function(cb) {
-        if (Html5Audio.recording) {
-            Html5Audio.cb = cb; // TODO(Bieber): Be more robust maybe with ids
-            Html5Audio.recording = false;
-            Html5Audio.worker.postMessage({
-                command: 'finalize'
-            });
-        }
-    },
-
-    clear: function(cb) {
-        Html5Audio.worker.postMessage({
-            command: 'clear'
-        });
-    },
-
-    playClip: function(clip, inHowLong, offset) {
-        var when = Html5Audio.audioContext.currentTime + inHowLong;
-        var samples = clip.samples;
-
-        var newBuffer = Html5Audio.audioContext.createBuffer(1, samples.length, clip.sampleRate);
-        newBuffer.getChannelData(0).set(samples);
-
-        var newSource = Html5Audio.audioContext.createBufferSource();
-        newSource.buffer = newBuffer;
-
-        newSource.connect(Html5Audio.audioContext.destination);
-        newSource.start(when, offset);
-
-        Html5Audio.playingSources.push(newSource);
-    },
-
-    stopPlaying: function() {
-        // Stops playing all playing sources.
-        // TODO(Bieber): Make sure things are removed from playingSources when they finish naturally
-        for (var i = 0; i < Html5Audio.playingSources.length; i++) {
-          var source = Html5Audio.playingSources[i];
-          source.stop(0);
-          delete source;
-        }
-        Html5Audio.playingSources = [];
-    },
-
-    isRecording: function() {
-        return Html5Audio.ready && Html5Audio.recording;
-    }
+  this.ready = true;
 };
-var FlashAudio = {
-    init: function() {
-        console.log("TODO(Bieber): Use Flash Audio");
-    },
 
-    record: function() {
+AudioRecorder.prototype.handleAudio = function(event) {
+  // Buffer has length specified in useStream
+  var buffer = event.inputBuffer.getChannelData(0);
+  if (this.recording) {
+    // Add the samples immediately to the Clip
+    Clip.addSamples(this.clip, buffer);
 
-    },
-
-    stopRecording: function(cb) {
-
-    },
-
-    getClip: function() {
-
-    },
-
-    clear: function() {
-
-    },
-
-    playClip: function(clip, inHowLong, offset) {
-
-    },
-
-    stopPlaying: function(cb) {
-
-    },
-
-    isRecording: function() {
-        return false;
-    }
+    // In the background, in multiples of 160, encode the samples
+    // And push the encoded data back into the Clip ASAP.
+    this.worker.postMessage({
+      command: 'put',
+      buffer: buffer
+    });
+  }
 };
-// AudioRecorder is a cross platform utility for recording and playing audio
-// in all major browsers.
 
-// TODO(Bieber): Make it work in Safari by falling back to Flash.
-var AudioRecorder = {
-    clip: undefined,
-    middleware: undefined, // HTML5 or Flash audio
+AudioRecorder.prototype.handleMessage = function(event) {
+	switch(event.data.command) {
+		case 'speex':
+		var data = event.data.data;
+		Clip.addSpeex(this.clip, data);
+		break;
 
-    init: function(config) {
-        // Initializes the AudioRecorder
-        window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext;
-        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+		case 'finalized':
+		Clip.finalize(this.clip);
+		if (this.cb) this.cb(this.clip);
+		break;
 
-        var html5audio = !!window.AudioContext && !!navigator.getUserMedia;
-        if (html5audio) {
-            AudioRecorder.middleware = Html5Audio;
-        } else {
-            AudioRecorder.middleware = FlashAudio;
-        }
-        AudioRecorder.middleware.init(config);
-    },
+		case 'cleared':
+		Clip.setSamples(this.clip, []);
+		break;
 
-    record: function() {
-				console.log("record")
-        // Starts recording to the current clip
-        if (AudioRecorder.isRecording()) return true;
+		case 'print':
+		console.log(event.data.message);
+		break;
+	}
+};
 
-        // If we can't record on the current clip, make a new one
-        if (AudioRecorder.clip === undefined || AudioRecorder.clip.finalized) {
-					  console.log("newClip")
-            AudioRecorder.newClip();
-        }
+AudioRecorder.prototype.record = function() {
+	if (this.isRecording()) return true;
+	if (this.clip === undefined || this.clip.finalized) {
+		this.newClip();
+	}
+	this.recording = true;
+};
 
-        return AudioRecorder.middleware.record();
-    },
+AudioRecorder.prototype.stopRecording = function(cb) {
+  if (this.recording) {
+    this.cb = cb;
+    this.recording = false;
+    this.worker.postMessage({
+      command: 'finalize'
+    });
+  }
+};
 
-    stopRecording: function(cb) {
-        // Stops recording and passes the newly created clip object to the
-        // callback function cb
-        if (!AudioRecorder.isRecording()) return true;
-        return AudioRecorder.middleware.stopRecording(cb);
-    },
+AudioRecorder.prototype.clear = function(cb) {
+  this.worker.postMessage({
+    command: 'clear'
+  });
+};
 
-    newClip: function() {
-        if (AudioRecorder.isRecording()) {
-            console.warn("Cannot create a new clip while recording");
-            return false;
-        }
-        AudioRecorder.clip = Clip.create();
-        return true;
-    },
+AudioRecorder.prototype.isRecording =  function() {
+  return this.ready && this.recording;
+};
 
-    getClip: function() {
-        return AudioRecorder.clip;
-    },
 
-    setClip: function(clip) {
-        if (AudioRecorder.isRecording()) {
-            console.warn("Cannot set the clip while recording");
-            return false;
-        }
-        AudioRecorder.clip = clip;
-    },
+AudioRecorder.prototype.newClip = function() {
+  if (this.isRecording()) {
+    console.warn("Cannot create a new clip while recording");
+    return false;
+  }
+  this.clip = Clip.create();
+  return true;
+};
 
-    clear: function() {
-        // Clears the current clip back to empty
-        AudioRecorder.middleware.clear();
-        return true;
-    },
+AudioRecorder.prototype.getClip = function() {
+	return this.clip;
+};
 
-    playClip: function(clip, inHowLong, offset) {
-        // Plays clip starting from the appropriate position at the
-        // appropriate time
-        if (inHowLong === undefined) {
-            inHowLong = 0;
-        }
-        if (offset === undefined) {
-            offset = 0;
-        }
-        AudioRecorder.middleware.playClip(clip, inHowLong, offset);
-        return true;
-    },
-
-    stopPlaying: function() {
-        // Stops all playing clips
-        AudioRecorder.middleware.stopPlaying();
-        return true;
-    },
-
-    isRecording: function() {
-        // Returns True if currently recording, False otherwise
-        return AudioRecorder.middleware.isRecording();
-    }
+AudioRecorder.prototype.setClip = function(clip) {
+  if (this.isRecording()) {
+    console.warn("Cannot set the clip while recording");
+    return false;
+  }
+  this.clip = clip;
 };
