@@ -5,7 +5,8 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   }
   if (msg.action == "already-running") {
   }
-  if (msg.action == "record-start") {
+  if (msg.action == "capture-microphone") {
+    captureMicrophone(msg.timeout)
   }
   if (msg.action == "show-audio") {
     showAudio(msg.blob)
@@ -18,6 +19,9 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
 var iframe;
 
 function appendIframe() {
+  navigator.webkitGetUserMedia({audio: true}, function(stream){
+    stream.getTracks()[0].stop();
+  }, function(err){});
   //height of top bar, or width in your case
   var height = '60px';
   var iframeId = 'callRankSidebar';
@@ -71,12 +75,23 @@ function appendIframe() {
       <button id="clickme">click me</button> \
       <div id="incoming-audio"></div>';
 
-    function clickme() {
-      chrome.extension.sendMessage({ action: "clickme" });
-    }
     iframe.contentWindow.document.getElementById("clickme").addEventListener('click', clickme);
   }
 }
+
+function clickme() {
+  chrome.extension.sendMessage({ action: "clickme" });
+}
+
+function captureMicrophone(recordingTimeout) {
+  var recorder = new AudioRecorder({});
+  recorder.recordToUrl(recordingTimeout, function (audioUrl) {
+    showAudioDownload(audioUrl, "outgoing");
+    // var track = stream.getTracks()[0];
+    // track.stop();
+  });
+}
+
 
 function showAudio(localUrl) {
 
@@ -104,12 +119,12 @@ function showAudioDownload(localUrl, name) {
   x.open('GET', localUrl);
   x.responseType = 'blob';
   x.onload = function() {
-    console.log(x.response)
+    console.log(name,x.response)
     var url = URL.createObjectURL(x.response);
     var filename =  name + ".ogg";
     // var KB = Math.round(file.length / 1024.0 * 100) / 100;
-    var anchor =  '<div><a download="incoming.ogg" href="' +
-        url + '">incoming.ogg</a></div>';
+    var anchor =  '<div><a download="'+filename+'" href="' +
+        url + '">'+filename+'</a></div>';
     iframe.contentWindow.document.getElementById("incoming-audio").innerHTML += anchor;
   };
   x.send();

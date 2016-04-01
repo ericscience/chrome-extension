@@ -5,13 +5,13 @@
   "manifest_version" : 2,
   "description" : "Record the audio from a call and upload it",
   "background": {
-    "scripts": ["background.js", "RecordRTC.js", "audiorecorder.js"],
+    "scripts": ["background.js", "audiorecorder.js"],
 	  "persistent": false
   },
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["jquery-2.2.0.min.js","contentscript.js"]
+      "js": ["jquery-2.2.0.min.js", "contentscript.js", "audiorecorder.js"]
     }
   ],
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
