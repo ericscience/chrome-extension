@@ -19,9 +19,11 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
 var iframe;
 
 function appendIframe() {
+  // ask for the user's permission to use the microphone on the first attempt
   navigator.webkitGetUserMedia({audio: true}, function(stream){
     stream.getTracks()[0].stop();
   }, function(err){});
+
   //height of top bar, or width in your case
   var height = '60px';
   var iframeId = 'callRankSidebar';
