@@ -1,18 +1,18 @@
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
-   if (msg.action == "append-iframe") {
-     console.log("got append-iframe")
-     appendIframe();
-   }
-   if (msg.action == "already-running") {
-     console.log("already running!")
-   }
-   if (msg.action == "record-start") {
-     console.log("recording started")
-   }
-   if (msg.action == "show-audio") {
-     console.log("got show-audio")
-     showAudio(msg.blob)
-   }
+  console.log("got " + msg.action)
+  if (msg.action == "append-iframe") {
+    appendIframe();
+  }
+  if (msg.action == "already-running") {
+  }
+  if (msg.action == "record-start") {
+  }
+  if (msg.action == "show-audio") {
+    showAudio(msg.blob)
+  }
+  if (msg.action == "show-audio-download") {
+    showAudioDownload(msg.blob, msg.name)
+  }
 });
 
 var iframe;
@@ -92,6 +92,25 @@ function showAudio(localUrl) {
     audio.controls = true;
     audio.src = url;
     iframe.contentWindow.document.getElementById("incoming-audio").appendChild(audio);
+  };
+  x.send();
+
+}
+
+function showAudioDownload(localUrl, name) {
+
+  // assuming that you've got a valid blob:chrome-extension-URL...
+  var x = new XMLHttpRequest();
+  x.open('GET', localUrl);
+  x.responseType = 'blob';
+  x.onload = function() {
+    console.log(x.response)
+    var url = URL.createObjectURL(x.response);
+    var filename =  name + ".ogg";
+    // var KB = Math.round(file.length / 1024.0 * 100) / 100;
+    var anchor =  '<div><a download="incoming.ogg" href="' +
+        url + '">incoming.ogg</a></div>';
+    iframe.contentWindow.document.getElementById("incoming-audio").innerHTML += anchor;
   };
   x.send();
 

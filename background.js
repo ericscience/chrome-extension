@@ -27,40 +27,43 @@ function captureTab() {
     console.log("already running!")
     sendToGlobalTab({ action: "already-running"});
   } else {
+    // capture the incoming audio from the current tab
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
       tabId = tabs[0].id
-      chrome.tabCapture.capture({audio: true, video: false}, gotStream);
+      chrome.tabCapture.capture({audio: true, video: false}, gotIncomingStream);
     });
   }
 }
 
-function gotStream(stream) {
+function gotIncomingStream(stream) {
   console.log("gotStream")
   window.audio = document.createElement("audio");
   window.audio.src = window.URL.createObjectURL(stream);
   window.audio.play()
-  recordStream(stream)
+  recordStream(stream, "incoming")
 }
 
-function recordStream(stream) {
-  console.log("recordMp3Stream")
-  var duration = 10000;
+function recordStream(stream, name) {
+  var config = {
+      'worker_path': '../lib/worker.min.js',
+      'stream': stream
+  };
+  AudioRecorder.init(config);
+  AudioRecorder.record();
 
-  var recordAudio = RecordRTC(stream, {
-    type: 'audio',
-    recorderType: StereoAudioRecorder
-  });
+  setTimeout(function(){ stopRecording(); }, 3000);
+  function stopRecording() {
+    AudioRecorder.stopRecording(function () {});
 
-  // duration should be in milliseconds
-  // RecordRTC will auto stop recording after provided duration
-  recordAudio.setRecordingDuration(10000)
-             .onRecordingStopped(stoppedCallback);
+    var samples = AudioRecorder.getClip().samples
+    var binary = FileHandler.speexFile(samples);
+    var array = new Uint8Array(binary.length);
+    for( var i = 0; i < binary.length; i++ ) { array[i] = binary.charCodeAt(i) };
+    var blob = new Blob([array], {type: "audio/ogg"});
+    var audioUrl = URL.createObjectURL(blob);
 
-  recordAudio.startRecording();
+    sendToGlobalTab({ action: "show-audio-download", blob: audioUrl, name: name});
 
-  function stoppedCallback(url) {
-    var audioUrl = URL.createObjectURL(recordAudio.blob);
-    sendToGlobalTab({ action: "show-audio", blob: audioUrl });
     tabId = undefined;
     var track = stream.getTracks()[0];
     track.stop();
