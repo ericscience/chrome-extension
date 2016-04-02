@@ -1,6 +1,6 @@
 // TODO: come up with a better way to handle user clicking the button in more than one tab
 var tabId;
-var recordingTimeout = 3000;
+var recordingTimeout = 3*1000;
 var incomingClip;
 var outgoingClip;
 
