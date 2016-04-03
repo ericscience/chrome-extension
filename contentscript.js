@@ -83,7 +83,7 @@ function appendIframe() {
           z-index: 2147483647;\
         }                     \
       </style>                \
-      Recording Time (seconds): <input id="timeout" type="text" value="3">\
+      Recording Time (seconds): <input id="timeout" type="text" value="10">\
       <button id="start">Start Recording</button> \
       <button id="stop">Stop Recording</button> \
       <div id="incoming-audio"></div>';
