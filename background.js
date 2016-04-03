@@ -27,9 +27,7 @@ function sendToTab(tabId, message) {
 }
 
 function startRecording(tabId, recordingTimeout) {
-  console.log("captureTab")
   if (recorders[tabId].recording) {
-    console.log("already running!")
     sendToTab(tabId, { action: "already-running"});
   } else {
     // capture the incoming audio from the current tab
@@ -40,7 +38,6 @@ function startRecording(tabId, recordingTimeout) {
 }
 
 function recordIncomingStream(tabId, recordingTimeout) {
-  console.log("recordIncomingStream");
   chrome.tabCapture.capture({audio: true, video: false}, function (stream) {
     window.audio = document.createElement("audio");
     window.audio.src = window.URL.createObjectURL(stream);
