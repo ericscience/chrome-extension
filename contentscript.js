@@ -85,13 +85,37 @@ function clickme() {
   chrome.extension.sendMessage({ action: "clickme" });
 }
 
+var config = {
+    'worker_path': 'lib/worker.js'
+};
+
+var clips = [];
+
 function captureMicrophone(recordingTimeout) {
-  var recorder = new AudioRecorder({});
-  recorder.recordToUrl(recordingTimeout, function (audioUrl) {
-    showAudioDownload(audioUrl, "outgoing");
-    // var track = stream.getTracks()[0];
-    // track.stop();
-  });
+  AudioRecorder.init(config);
+  setTimeout(function () {
+    AudioRecorder.record();
+    clips.push(AudioRecorder.getClip());
+    setTimeout(function () {
+      AudioRecorder.stopRecording(function () {});
+      var file = FileHandler.speexFile(clips[0].speex);
+      console.log('clips',clips)
+      console.log('file',file)
+    }, 3000);
+  },1000)
+
+
+  // var array = new Uint8Array(binary.length);
+  // for( var i = 0; i < binary.length; i++ ) { array[i] = binary.charCodeAt(i) };
+  // var blob = new Blob([array], {type: "audio/ogg"});
+  // console.log('blob',blob)
+  // var audioUrl = URL.createObjectURL(blob);
+
+  // AudioRecorder.recordToUrl({}, recordingTimeout, function (audioUrl) {
+  //   showAudioDownload(audioUrl, "outgoing");
+  //   // var track = stream.getTracks()[0];
+  //   // track.stop();
+  // });
 }
 
 

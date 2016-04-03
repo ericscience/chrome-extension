@@ -14,11 +14,6 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   }
 });
 
-function captureMicrophone(recordingTimeout) {
-  var config = { 'worker_path': '../lib/worker.min.js' };
-  recordAudio(config, "outgoing");
-}
-
 function sendToCurrentTab(message) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
     chrome.tabs.sendMessage(tabs[0].id, message, function(response) {});
@@ -36,10 +31,10 @@ function captureTab() {
     sendToGlobalTab({ action: "already-running"});
   } else {
     // capture the incoming audio from the current tab
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-      tabId = tabs[0].id
-      chrome.tabCapture.capture({audio: true, video: false}, gotIncomingStream);
-    });
+    // chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+    //   tabId = tabs[0].id
+    //   chrome.tabCapture.capture({audio: true, video: false}, gotIncomingStream);
+    // });
     // capture the outgoing audio from the microphone
     sendToCurrentTab({ action: "capture-microphone", timeout: recordingTimeout});
   }
@@ -50,8 +45,9 @@ function gotIncomingStream(stream) {
   window.audio = document.createElement("audio");
   window.audio.src = window.URL.createObjectURL(stream);
   window.audio.play();
-  var recorder = new AudioRecorder({ 'stream': stream });
-  recorder.recordToUrl(recordingTimeout, function (audioUrl) {
+  console.log('window.AudioContext: ', new window.AudioContext())
+  var config = { 'audioContext': new window.AudioContext(), 'stream': stream }
+  AudioRecorder.recordToUrl(config, recordingTimeout, function (audioUrl) {
     sendToGlobalTab({ action: "show-audio-download", blob: audioUrl, name: "incoming"});
     tabId = undefined;
     var track = stream.getTracks()[0];
