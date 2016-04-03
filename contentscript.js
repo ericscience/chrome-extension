@@ -1,3 +1,15 @@
+// This is a roundabout way of injecting the worker script to an accessible location
+var workerUrl;
+var x = new XMLHttpRequest();
+x.responseType = 'text';
+x.open('GET', chrome.extension.getURL('lib/worker.js'));
+x.onload = function() {
+  var blob = new Blob([x.response],{type: "text/javascript"});
+  workerUrl = window.URL.createObjectURL(blob)
+}
+x.send();
+
+// event listeners
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   console.log("got " + msg.action)
   if (msg.action == "append-iframe") {
@@ -7,9 +19,6 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   }
   if (msg.action == "capture-microphone") {
     captureMicrophone(msg.timeout)
-  }
-  if (msg.action == "show-audio") {
-    showAudio(msg.blob)
   }
   if (msg.action == "show-audio-download") {
     showAudioDownload(msg.blob, msg.name)
@@ -23,9 +32,6 @@ function appendIframe() {
   navigator.webkitGetUserMedia({audio: true}, function(stream){
     stream.getTracks()[0].stop();
   }, function(err){});
-
-  // initialize the AudioRecorder for the microphone
-  AudioRecorder.init({});
 
   //height of top bar, or width in your case
   var height = '70px';
@@ -78,45 +84,39 @@ function appendIframe() {
         }                     \
       </style>                \
       Recording Time (seconds): <input id="timeout" type="text" value="3">\
-      <button id="clickme">Start Recording</button> \
+      <button id="start">Start Recording</button> \
+      <button id="stop">Stop Recording</button> \
       <div id="incoming-audio"></div>';
 
-    iframe.contentWindow.document.getElementById("clickme").addEventListener('click', clickme);
+    iframe.contentWindow.document.getElementById("start").addEventListener('click', start);
+    iframe.contentWindow.document.getElementById("stop").addEventListener('click', stop);
   }
 }
 
-function clickme() {
+function start() {
   iframe.contentWindow.document.getElementById("incoming-audio").innerHTML = '';
   var timeoutSeconds = iframe.contentWindow.document.getElementById("timeout").value;
   chrome.extension.sendMessage({ action: "startRecording", timeoutSeconds: timeoutSeconds });
 }
 
-function captureMicrophone(recordingTimeout) {
-  AudioRecorder.recordToUrl(recordingTimeout, function (audioUrl) {
-    showAudioDownload(audioUrl, "outgoing");
-    // var track = stream.getTracks()[0];
-    // track.stop();
-  });
+var recorder;
+
+function stop() {
+  chrome.extension.sendMessage({ action: "stopRecording" });
+  if (recorder) {
+    recorder.stopRecording();
+  }
 }
 
 
-function showAudio(localUrl) {
-
-  // assuming that you've got a valid blob:chrome-extension-URL...
-  var x = new XMLHttpRequest();
-  x.open('GET', localUrl);
-  x.responseType = 'blob';
-  x.onload = function() {
-    var url = URL.createObjectURL(x.response);
-    // Example: blob:http%3A//example.com/17e9d36c-f5cd-48e6-b6b9-589890de1d23
-    // Now pass url to the page, e.g. using postMessage
-    var audio = new Audio();
-    audio.controls = true;
-    audio.src = url;
-    iframe.contentWindow.document.getElementById("incoming-audio").appendChild(audio);
-  };
-  x.send();
-
+function captureMicrophone(recordingTimeout) {
+  navigator.webkitGetUserMedia({audio: true}, function (stream) {
+    var callback = function (audioUrl) {
+      showAudioDownload(audioUrl, "outgoing");
+    }
+    recorder = new AudioRecorder(workerUrl, callback);
+    recorder.recordWithTimeout(stream, recordingTimeout);
+  }, function(err){});
 }
 
 function showAudioDownload(localUrl, name) {
