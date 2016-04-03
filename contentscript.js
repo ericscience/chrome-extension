@@ -1,3 +1,15 @@
+// This is a roundabout way of injecting the worker script to an accessible location
+var workerUrl;
+var x = new XMLHttpRequest();
+x.responseType = 'text';
+x.open('GET', chrome.extension.getURL('lib/worker.js'));
+x.onload = function() {
+  var blob = new Blob([x.response],{type: "text/javascript"});
+  workerUrl = window.URL.createObjectURL(blob)
+}
+x.send();
+
+// event listeners
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   console.log("got " + msg.action)
   if (msg.action == "append-iframe") {
@@ -25,7 +37,8 @@ function appendIframe() {
   }, function(err){});
 
   // initialize the AudioRecorder for the microphone
-  AudioRecorder.init({});
+  var config = { worker_path: workerUrl }
+  AudioRecorder.init(config);
 
   //height of top bar, or width in your case
   var height = '70px';
