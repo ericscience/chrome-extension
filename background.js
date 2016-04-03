@@ -1,15 +1,15 @@
 // TODO: come up with a better way to handle user clicking the button in more than one tab
 var tabId;
-var recordingTimeout = 3*1000;
-var incomingClip;
-var outgoingClip;
+var recordingTimeout;
 
 chrome.browserAction.onClicked.addListener(function () {
   sendToCurrentTab({ action: "append-iframe"});
 });
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
-  if (msg.action == 'clickme') {
+  if (msg.action == 'startRecording') {
+    console.log('msg.timeoutSeconds',msg.timeoutSeconds)
+    recordingTimeout = msg.timeoutSeconds*1000;
     captureTab();
   }
 });
@@ -31,10 +31,10 @@ function captureTab() {
     sendToGlobalTab({ action: "already-running"});
   } else {
     // capture the incoming audio from the current tab
-    // chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
-    //   tabId = tabs[0].id
-    //   chrome.tabCapture.capture({audio: true, video: false}, gotIncomingStream);
-    // });
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs){
+      tabId = tabs[0].id
+      chrome.tabCapture.capture({audio: true, video: false}, gotIncomingStream);
+    });
     // capture the outgoing audio from the microphone
     sendToCurrentTab({ action: "capture-microphone", timeout: recordingTimeout});
   }
@@ -45,8 +45,8 @@ function gotIncomingStream(stream) {
   window.audio = document.createElement("audio");
   window.audio.src = window.URL.createObjectURL(stream);
   window.audio.play();
-  console.log('window.AudioContext: ', new window.AudioContext())
-  var config = { 'audioContext': new window.AudioContext(), 'stream': stream }
+
+  var config = {'stream': stream }
   AudioRecorder.recordToUrl(config, recordingTimeout, function (audioUrl) {
     sendToGlobalTab({ action: "show-audio-download", blob: audioUrl, name: "incoming"});
     tabId = undefined;

@@ -25,7 +25,7 @@ function appendIframe() {
   }, function(err){});
 
   //height of top bar, or width in your case
-  var height = '60px';
+  var height = '70px';
   var iframeId = 'callRankSidebar';
   if (!document.getElementById(iframeId)) {
 
@@ -74,7 +74,8 @@ function appendIframe() {
           z-index: 2147483647;\
         }                     \
       </style>                \
-      <button id="clickme">click me</button> \
+      Recording Time (seconds): <input id="timeout" type="text" value="10">\
+      <button id="clickme">Start Recording</button> \
       <div id="incoming-audio"></div>';
 
     iframe.contentWindow.document.getElementById("clickme").addEventListener('click', clickme);
@@ -82,40 +83,19 @@ function appendIframe() {
 }
 
 function clickme() {
-  chrome.extension.sendMessage({ action: "clickme" });
+  iframe.contentWindow.document.getElementById("incoming-audio").innerHTML = '';
+  var timeoutSeconds = iframe.contentWindow.document.getElementById("timeout").value;
+  chrome.extension.sendMessage({ action: "startRecording", timeoutSeconds: timeoutSeconds });
 }
 
-var config = {
-    'worker_path': 'lib/worker.js'
-};
-
-var clips = [];
+var config = { 'worker_path': 'lib/worker.js' };
 
 function captureMicrophone(recordingTimeout) {
-  AudioRecorder.init(config);
-  setTimeout(function () {
-    AudioRecorder.record();
-    clips.push(AudioRecorder.getClip());
-    setTimeout(function () {
-      AudioRecorder.stopRecording(function () {});
-      var file = FileHandler.speexFile(clips[0].speex);
-      console.log('clips',clips)
-      console.log('file',file)
-    }, 3000);
-  },1000)
-
-
-  // var array = new Uint8Array(binary.length);
-  // for( var i = 0; i < binary.length; i++ ) { array[i] = binary.charCodeAt(i) };
-  // var blob = new Blob([array], {type: "audio/ogg"});
-  // console.log('blob',blob)
-  // var audioUrl = URL.createObjectURL(blob);
-
-  // AudioRecorder.recordToUrl({}, recordingTimeout, function (audioUrl) {
-  //   showAudioDownload(audioUrl, "outgoing");
-  //   // var track = stream.getTracks()[0];
-  //   // track.stop();
-  // });
+  AudioRecorder.recordToUrl(config, recordingTimeout, function (audioUrl) {
+    showAudioDownload(audioUrl, "outgoing");
+    // var track = stream.getTracks()[0];
+    // track.stop();
+  });
 }
 
 
