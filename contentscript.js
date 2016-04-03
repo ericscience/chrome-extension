@@ -20,9 +20,6 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   if (msg.action == "capture-microphone") {
     captureMicrophone(msg.timeout)
   }
-  if (msg.action == "show-audio") {
-    showAudio(msg.blob)
-  }
   if (msg.action == "show-audio-download") {
     showAudioDownload(msg.blob, msg.name)
   }
@@ -35,10 +32,6 @@ function appendIframe() {
   navigator.webkitGetUserMedia({audio: true}, function(stream){
     stream.getTracks()[0].stop();
   }, function(err){});
-
-  // initialize the AudioRecorder for the microphone
-  var config = { worker_path: workerUrl }
-  AudioRecorder.init(config);
 
   //height of top bar, or width in your case
   var height = '70px';
@@ -105,31 +98,13 @@ function clickme() {
 }
 
 function captureMicrophone(recordingTimeout) {
-  AudioRecorder.recordToUrl(recordingTimeout, function (audioUrl) {
-    showAudioDownload(audioUrl, "outgoing");
-    // var track = stream.getTracks()[0];
-    // track.stop();
-  });
-}
-
-
-function showAudio(localUrl) {
-
-  // assuming that you've got a valid blob:chrome-extension-URL...
-  var x = new XMLHttpRequest();
-  x.open('GET', localUrl);
-  x.responseType = 'blob';
-  x.onload = function() {
-    var url = URL.createObjectURL(x.response);
-    // Example: blob:http%3A//example.com/17e9d36c-f5cd-48e6-b6b9-589890de1d23
-    // Now pass url to the page, e.g. using postMessage
-    var audio = new Audio();
-    audio.controls = true;
-    audio.src = url;
-    iframe.contentWindow.document.getElementById("incoming-audio").appendChild(audio);
-  };
-  x.send();
-
+  navigator.webkitGetUserMedia({audio: true}, function (stream) {
+    var callback = function (audioUrl) {
+      showAudioDownload(audioUrl, "outgoing");
+    }
+    var recorder = new AudioRecorder(workerUrl, callback);
+    recorder.recordWithTimeout(stream, recordingTimeout);
+  }, function(err){});
 }
 
 function showAudioDownload(localUrl, name) {
