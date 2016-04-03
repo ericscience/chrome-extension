@@ -24,6 +24,9 @@ function appendIframe() {
     stream.getTracks()[0].stop();
   }, function(err){});
 
+  // initialize the AudioRecorder for the microphone
+  AudioRecorder.init({});
+
   //height of top bar, or width in your case
   var height = '70px';
   var iframeId = 'callRankSidebar';
@@ -74,7 +77,7 @@ function appendIframe() {
           z-index: 2147483647;\
         }                     \
       </style>                \
-      Recording Time (seconds): <input id="timeout" type="text" value="10">\
+      Recording Time (seconds): <input id="timeout" type="text" value="3">\
       <button id="clickme">Start Recording</button> \
       <div id="incoming-audio"></div>';
 
@@ -88,10 +91,8 @@ function clickme() {
   chrome.extension.sendMessage({ action: "startRecording", timeoutSeconds: timeoutSeconds });
 }
 
-var config = { 'worker_path': 'lib/worker.js' };
-
 function captureMicrophone(recordingTimeout) {
-  AudioRecorder.recordToUrl(config, recordingTimeout, function (audioUrl) {
+  AudioRecorder.recordToUrl(recordingTimeout, function (audioUrl) {
     showAudioDownload(audioUrl, "outgoing");
     // var track = stream.getTracks()[0];
     // track.stop();
