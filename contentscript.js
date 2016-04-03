@@ -84,25 +84,37 @@ function appendIframe() {
         }                     \
       </style>                \
       Recording Time (seconds): <input id="timeout" type="text" value="3">\
-      <button id="clickme">Start Recording</button> \
+      <button id="start">Start Recording</button> \
+      <button id="stop">Stop Recording</button> \
       <div id="incoming-audio"></div>';
 
-    iframe.contentWindow.document.getElementById("clickme").addEventListener('click', clickme);
+    iframe.contentWindow.document.getElementById("start").addEventListener('click', start);
+    iframe.contentWindow.document.getElementById("stop").addEventListener('click', stop);
   }
 }
 
-function clickme() {
+function start() {
   iframe.contentWindow.document.getElementById("incoming-audio").innerHTML = '';
   var timeoutSeconds = iframe.contentWindow.document.getElementById("timeout").value;
   chrome.extension.sendMessage({ action: "startRecording", timeoutSeconds: timeoutSeconds });
 }
+
+var recorder;
+
+function stop() {
+  chrome.extension.sendMessage({ action: "stopRecording" });
+  if (recorder) {
+    recorder.stopRecording();
+  }
+}
+
 
 function captureMicrophone(recordingTimeout) {
   navigator.webkitGetUserMedia({audio: true}, function (stream) {
     var callback = function (audioUrl) {
       showAudioDownload(audioUrl, "outgoing");
     }
-    var recorder = new AudioRecorder(workerUrl, callback);
+    recorder = new AudioRecorder(workerUrl, callback);
     recorder.recordWithTimeout(stream, recordingTimeout);
   }, function(err){});
 }

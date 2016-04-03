@@ -12,11 +12,13 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 });
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
+  var tabId = sender.tab.id;
+  console.log('got ',msg.action,' from tabId',tabId)
   if (msg.action == 'startRecording') {
-    console.log('tabId',sender.tab.id)
-    console.log('msg.timeoutSeconds',msg.timeoutSeconds)
-    var recordingTimeout = msg.timeoutSeconds*1000;
-    startRecording(sender.tab.id, recordingTimeout);
+    startRecording(tabId, msg.timeoutSeconds*1000);
+  }
+  if (msg.action == 'stopRecording') {
+    recorders[tabId].stopRecording();
   }
 });
 
