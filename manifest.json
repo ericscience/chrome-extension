@@ -5,7 +5,7 @@
   "manifest_version" : 2,
   "description" : "Record the audio from a call and upload it",
   "background": {
-    "scripts": ["background.js", "lib/audiorecorder.js"],
+    "scripts": ["background.js", "lib/audiorecorder.js", "lib/s3.js"],
 	  "persistent": false
   },
   "content_scripts": [

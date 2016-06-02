@@ -5,10 +5,12 @@ var recorders = {};
 chrome.browserAction.onClicked.addListener(function (tab) {
   var tabId = tab.id
   var callback = function(audioUrl) {
-    sendToTab(tabId, { action: "show-audio-download", blob: audioUrl, name: "incoming"});
+    // TODO: Uncomment when server is ready
+    // uploadToS3(audioUrl, 'incoming')
+    sendToTab(tabId, { action: 'show-audio-download', blob: audioUrl, name: 'incoming'});
   };
   recorders[tabId] = new AudioRecorder('lib/worker.js', callback);
-  sendToTab(tabId, { action: "append-iframe"});
+  sendToTab(tabId, { action: 'append-iframe'});
 });
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
@@ -19,6 +21,11 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   }
   if (msg.action == 'stopRecording') {
     recorders[tabId].stopRecording();
+  }
+  if (msg.action == 'uploadToS3') {
+    // TODO: Upload to S3. Needs server for signing request change from localhost when ready
+    var s3 = new S3Upload('http://localhost:3000');
+    s3.uploadBlobURI(msg.blob, msg.name+'.ogg', 'audio/ogg');
   }
 });
 

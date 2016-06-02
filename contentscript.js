@@ -83,7 +83,7 @@ function appendIframe() {
           z-index: 2147483647;\
         }                     \
       </style>                \
-      Recording Time (seconds): <input id="timeout" type="text" value="10">\
+      Recording Time (seconds): <input id="timeout" type="text" value="1">\
       <button id="start">Start Recording</button> \
       <button id="stop">Stop Recording</button> \
       <div id="incoming-audio"></div>';
@@ -112,6 +112,8 @@ function stop() {
 function captureMicrophone(recordingTimeout) {
   navigator.webkitGetUserMedia({audio: true}, function (stream) {
     var callback = function (audioUrl) {
+      // TODO: Uncomment when server is ready
+      // chrome.extension.sendMessage({ action: "uploadToS3", blob: audioUrl, name: "outgoing" });
       showAudioDownload(audioUrl, "outgoing");
     }
     recorder = new AudioRecorder(workerUrl, callback);
