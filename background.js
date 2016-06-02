@@ -1,6 +1,9 @@
 // TODO: come up with a better way to handle user clicking the button in more than one tab
 // var tabId;
 var recorders = {};
+var user = {
+  email: undefined
+}
 
 chrome.browserAction.onClicked.addListener(function (tab) {
   var tabId = tab.id
@@ -11,6 +14,14 @@ chrome.browserAction.onClicked.addListener(function (tab) {
   };
   recorders[tabId] = new AudioRecorder('lib/worker.js', callback);
   sendToTab(tabId, { action: 'append-iframe'});
+
+  authenticatedXhr('GET', 'https://www.googleapis.com/userinfo/v2/me', function(err,status,info) {
+    if (err) {
+      console.error(err)
+    }
+    console.log(info);
+    user.email = info.email;
+  });
 });
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
@@ -51,4 +62,33 @@ function recordIncomingStream(tabId, recordingTimeout) {
     window.audio.play();
     recorders[tabId].recordWithTimeout(stream,recordingTimeout);
   });
+}
+
+// From https://developer.chrome.com/apps/app_identity
+function authenticatedXhr(method, url, callback) {
+  var retry = true;
+  function getTokenAndXhr() {
+    chrome.identity.getAuthToken({ 'interactive': true }, function (access_token) {
+      if (chrome.runtime.lastError) {
+        callback(chrome.runtime.lastError);
+        return;
+      }
+
+      var xhr = new XMLHttpRequest();
+      xhr.open(method, url);
+      xhr.setRequestHeader('Authorization','Bearer ' + access_token);
+
+      xhr.onload = function () {
+        if (this.status === 401 && retry) {
+          // This status may indicate that the cached access token was invalid. Retry once with a fresh token.
+          retry = false;
+          chrome.identity.removeCachedAuthToken({ 'token': access_token }, getTokenAndXhr);
+          return;
+        }
+        callback(null, this.status, this.responseText);
+      }
+      xhr.send();
+    });
+  }
+  getTokenAndXhr();
 }

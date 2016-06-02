@@ -24,5 +24,12 @@
 	},
   "permissions": [
     "activeTab", "tabCapture", "identity"
-  ]
+  ],
+  "oauth2": {
+    "client_id": "424830153201-lt8ph83tqhs4ccr16vk00bes20os7ftd.apps.googleusercontent.com",
+    "scopes": [
+      "email"
+    ]
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs/rMJEEfAe+i6cC5Zb6CRNGEDZMYYjf3nHK8B7dnOST5n2pxQRR0YdipZV5zmDTXcs8np5BRenmSir8iXDO+1SKtCewj5fXapSZPfbWvOW6vXTWG00UsPGpkg24y+J1T6wAQwG8rmRwz+YKq9AhiFJsEytNxn1tFgCx3WE0QXo0fQDL6BHiIR7GAeJfNXjwZAHJzE914VIe8qNjKMm0a8rMqLNztbNauF31vndEpU6mrsYsIarcb6KFnKQ+Mkc9ftWvrETztUGbZKdS67xcaLU32kkYmIq2YVHZxUYYUdo9VUIL9OSiU/qZvd9FarIFt94CqjrejHHPfJ3/yO7+PcwIDAQAB"
 }
