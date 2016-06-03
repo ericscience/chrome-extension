@@ -2,16 +2,16 @@
 var workerUrl;
 var x = new XMLHttpRequest();
 x.responseType = 'text';
-x.open('GET', chrome.extension.getURL('lib/worker.js'));
+x.open('GET', chrome.extension.getURL('worker.js'));
 x.onload = function() {
   var blob = new Blob([x.response],{type: "text/javascript"});
-  workerUrl = window.URL.createObjectURL(blob)
+  workerUrl = window.URL.createObjectURL(blob);
 }
 x.send();
 
 // event listeners
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
-  console.log("got " + msg.action)
+  console.log(msg)
   if (msg.action == "append-iframe") {
     appendIframe();
   }

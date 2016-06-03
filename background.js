@@ -12,7 +12,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
     // uploadToS3(audioUrl, 'incoming')
     sendToTab(tabId, { action: 'show-audio-download', blob: audioUrl, name: 'incoming'});
   };
-  recorders[tabId] = new AudioRecorder('lib/worker.js', callback);
+  recorders[tabId] = new AudioRecorder('worker.js', callback);
   sendToTab(tabId, { action: 'append-iframe'});
 
   authenticatedXhr('GET', 'https://www.googleapis.com/userinfo/v2/me', function(err,status,info) {
@@ -26,7 +26,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   var tabId = sender.tab.id;
-  console.log('got ',msg.action,' from tabId',tabId)
+  console.log(msg,' from tabId:',tabId)
   if (msg.action == 'startRecording') {
     startRecording(tabId, msg.timeoutSeconds*1000);
   }
