@@ -18,7 +18,7 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   if (msg.action == "already-running") {
   }
   if (msg.action == "capture-microphone") {
-    captureMicrophone(msg.timeout)
+    captureMicrophone(msg.timeout, msg.filepath)
   }
   if (msg.action == "show-audio-download") {
     showAudioDownload(msg.blob, msg.name)
@@ -35,7 +35,7 @@ function appendIframe() {
 
   //height of top bar, or width in your case
   var height = '70px';
-  var iframeId = 'callRankSidebar';
+  var iframeId = 'repupSidebar';
   if (!document.getElementById(iframeId)) {
 
     //resolve html tag, which is more dominant than <body>
@@ -109,12 +109,14 @@ function stop() {
 }
 
 
-function captureMicrophone(recordingTimeout) {
+function captureMicrophone(recordingTimeout, filepath) {
   navigator.webkitGetUserMedia({audio: true}, function (stream) {
     var callback = function (audioUrl) {
       // TODO: Uncomment when server is ready
-      // chrome.extension.sendMessage({ action: "uploadToS3", blob: audioUrl, name: "outgoing" });
-      showAudioDownload(audioUrl, "outgoing");
+      var filename = filepath + '-outgoing.ogg'
+      console.log('filename: ', filename)
+      chrome.extension.sendMessage({ action: "uploadToS3", blob: audioUrl, name: filename });
+      showAudioDownload(audioUrl, filename);
     }
     recorder = new AudioRecorder(workerUrl, callback);
     recorder.recordWithTimeout(stream, recordingTimeout);
@@ -130,7 +132,7 @@ function showAudioDownload(localUrl, name) {
   x.onload = function() {
     console.log(name,x.response)
     var url = URL.createObjectURL(x.response);
-    var filename =  name + ".ogg";
+    var filename =  name;
     // var KB = Math.round(file.length / 1024.0 * 100) / 100;
     var anchor =  '<div><a download="'+filename+'" href="' +
         url + '">'+filename+'</a></div>';

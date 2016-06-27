@@ -5,6 +5,7 @@ var paths = {
   background: [
     'lib/s3.js',
     'lib/audiorecorder.js',
+    'lib/authenticatedXhr.js',
     'background.js'
   ],
   contentscript: [
