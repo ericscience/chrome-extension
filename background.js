@@ -20,7 +20,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   var tabId = sender.tab.id;
-  console.log(msg,' from tabId:',tabId)
+  console.log(msg,' from tabId:', tabId)
   if (msg.action == 'startRecording') {
     startRecording(tabId, msg.timeoutSeconds*1000);
   }
@@ -65,6 +65,6 @@ function recordIncomingStream(tabId, recordingTimeout, filepath) {
     window.audio = document.createElement("audio");
     window.audio.src = window.URL.createObjectURL(stream);
     window.audio.play();
-    recorders[tabId].recordWithTimeout(stream,recordingTimeout);
+    recorders[tabId].recordWithTimeout(stream, recordingTimeout);
   });
 }

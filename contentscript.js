@@ -7,7 +7,7 @@ var x = new XMLHttpRequest();
 x.responseType = 'text';
 x.open('GET', chrome.extension.getURL('worker.js'));
 x.onload = function() {
-  var blob = new Blob([x.response],{type: "text/javascript"});
+  var blob = new Blob([x.response], {type: "text/javascript"});
   workerUrl = window.URL.createObjectURL(blob);
 }
 x.send();
@@ -48,7 +48,7 @@ function showAudioDownload(localUrl, name) {
   x.open('GET', localUrl);
   x.responseType = 'blob';
   x.onload = function() {
-    console.log(name,x.response)
+    console.log(name, x.response)
     var url = URL.createObjectURL(x.response);
     var filename =  name;
     // var KB = Math.round(file.length / 1024.0 * 100) / 100;
