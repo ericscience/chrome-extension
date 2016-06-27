@@ -1,9 +1,8 @@
-// TODO: come up with a better way to handle user clicking the button in more than one tab
-// var tabId;
+var s3 = new S3Upload('http://s3.repup.io');
+var recordingTimeout = 5*60*1000;
 var recorders = {};
-var s3 = new S3Upload('http://52.37.14.117');
 var user = { 'id': undefined }
-var recordingTimeout = 5*1000;
+
 var filePartCount = 0;
 function getFilename(filepath) {
   var filename = filepath + '-' + filePartCount + '-incoming.ogg'
