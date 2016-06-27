@@ -3,6 +3,13 @@
 var recorders = {};
 var s3 = new S3Upload('http://52.37.14.117');
 var user = { 'id': undefined }
+var recordingTimeout = 5*1000;
+var filePartCount = 0;
+function getFilename(filepath) {
+  var filename = filepath + '-' + filePartCount + '-incoming.ogg'
+  filePartCount = filePartCount + 1;
+  return filename;
+}
 
 chrome.browserAction.onClicked.addListener(function (tab) {
   authenticatedXhr('GET', 'https://www.googleapis.com/userinfo/v2/me', function(err,status,info) {
@@ -21,13 +28,15 @@ chrome.browserAction.onClicked.addListener(function (tab) {
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   var tabId = sender.tab.id;
   console.log(msg,' from tabId:', tabId)
-  if (msg.action == 'startRecording') {
-    startRecording(tabId, msg.timeoutSeconds*1000);
+  if (msg.action == 'start-recording') {
+    var timestamp = Math.round(new Date().getTime() / 1000);
+    var filepath = user.id + '/' + timestamp;
+    startRecording(tabId, filepath);
   }
-  if (msg.action == 'stopRecording') {
+  if (msg.action == 'stop-recording') {
     recorders[tabId].stopRecording();
   }
-  if (msg.action == 'uploadToS3') {
+  if (msg.action == 'upload-to-s3') {
     s3.uploadBlobURI(msg.blob, msg.name, 'audio/ogg');
   }
 });
@@ -36,14 +45,12 @@ function sendToTab(tabId, message) {
   chrome.tabs.sendMessage(tabId, message, function(response) {});
 }
 
-function startRecording(tabId, recordingTimeout) {
+function startRecording(tabId, filepath) {
   if (recorders[tabId] && recorders[tabId].recording) {
     sendToTab(tabId, { action: "already-running"});
   } else {
-    var timestamp = new Date().getTime();
-    var filepath = user.id + '/' + timestamp;
     // capture the incoming audio from the current tab
-    recordIncomingStream(tabId, recordingTimeout, filepath);
+    recordIncomingStream(tabId, filepath);
     // capture the outgoing audio from the microphone
     sendToTab(tabId, {
       action: "capture-microphone",
@@ -53,11 +60,11 @@ function startRecording(tabId, recordingTimeout) {
   }
 }
 
-function recordIncomingStream(tabId, recordingTimeout, filepath) {
+function recordIncomingStream(tabId, filepath) {
   var callback = function(audioUrl) {
-    var filename = filepath + '-incoming.ogg'
+    var filename = getFilename(filepath);
     s3.uploadBlobURI(audioUrl, filename, 'audio/ogg');
-    sendToTab(tabId, { action: 'show-audio-download', blob: audioUrl, name: filename});
+    sendToTab(tabId, { action: 'show-audio-download', blob: audioUrl, name: filename });
   };
   recorders[tabId] = new AudioRecorder('worker.js', callback);
 
@@ -65,6 +72,6 @@ function recordIncomingStream(tabId, recordingTimeout, filepath) {
     window.audio = document.createElement("audio");
     window.audio.src = window.URL.createObjectURL(stream);
     window.audio.play();
-    recorders[tabId].recordWithTimeout(stream, recordingTimeout);
+    recorders[tabId].recordWithCheckpoints(stream, recordingTimeout);
   });
 }

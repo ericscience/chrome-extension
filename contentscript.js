@@ -1,5 +1,11 @@
 var iframe;   // This is the iframe we use to display content on the page
 var recorder; // This is the recorder for capturing the microphone
+var filePartCount = 0;
+function getFilename(filepath) {
+  var filename = filepath + '-' + filePartCount + '-outgoing.ogg'
+  filePartCount = filePartCount + 1;
+  return filename;
+}
 
 // This is a roundabout way of injecting the worker script to an accessible location
 var workerUrl;
@@ -32,13 +38,12 @@ function captureMicrophone(recordingTimeout, filepath) {
   navigator.webkitGetUserMedia({audio: true}, function (stream) {
     var callback = function (audioUrl) {
       // TODO: Uncomment when server is ready
-      var filename = filepath + '-outgoing.ogg'
-      console.log('filename: ', filename)
-      chrome.extension.sendMessage({ action: "uploadToS3", blob: audioUrl, name: filename });
+      var filename = getFilename(filepath);
+      chrome.extension.sendMessage({ action: "upload-to-s3", blob: audioUrl, name: filename });
       showAudioDownload(audioUrl, filename);
     }
     recorder = new AudioRecorder(workerUrl, callback);
-    recorder.recordWithTimeout(stream, recordingTimeout);
+    recorder.recordWithCheckpoints(stream, recordingTimeout);
   }, function(err){});
 }
 
@@ -115,7 +120,6 @@ function appendIframe() {
           z-index: 2147483647;\
         }                     \
       </style>                \
-      Recording Time (seconds): <input id="timeout" type="text" value="1">\
       <button id="start">Start Recording</button> \
       <button id="stop">Stop Recording</button> \
       <div id="incoming-audio"></div>';
@@ -128,13 +132,12 @@ function appendIframe() {
 // Start recording audio
 function startRecording() {
   iframe.contentWindow.document.getElementById("incoming-audio").innerHTML = '';
-  var timeoutSeconds = iframe.contentWindow.document.getElementById("timeout").value;
-  chrome.extension.sendMessage({ action: "startRecording", timeoutSeconds: timeoutSeconds });
+  chrome.extension.sendMessage({ action: "start-recording"});
 }
 
 // Stop recording audio
 function stopRecording() {
-  chrome.extension.sendMessage({ action: "stopRecording" });
+  chrome.extension.sendMessage({ action: "stop-recording" });
   if (recorder) {
     recorder.stopRecording();
   }
