@@ -2,10 +2,7 @@
 // var tabId;
 var recorders = {};
 var s3 = new S3Upload('http://52.37.14.117');
-var user = {
-  'id': undefined
-};
-
+var user = { 'id': undefined }
 
 chrome.browserAction.onClicked.addListener(function (tab) {
   authenticatedXhr('GET', 'https://www.googleapis.com/userinfo/v2/me', function(err,status,info) {
@@ -31,7 +28,6 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
     recorders[tabId].stopRecording();
   }
   if (msg.action == 'uploadToS3') {
-    // TODO: Upload to S3. Needs server for signing request change from localhost when ready
     s3.uploadBlobURI(msg.blob, msg.name, 'audio/ogg');
   }
 });
@@ -46,17 +42,8 @@ function startRecording(tabId, recordingTimeout) {
   } else {
     var timestamp = new Date().getTime();
     var filepath = user.id + '/' + timestamp;
-
-    var callback = function(audioUrl) {
-      // TODO: Uncomment when server is ready
-      var filename = filepath + '-incoming.ogg'
-      s3.uploadBlobURI(audioUrl, filename, 'audio/ogg');
-      sendToTab(tabId, { action: 'show-audio-download', blob: audioUrl, name: filename});
-    };
-    recorders[tabId] = new AudioRecorder('worker.js', callback);
-
     // capture the incoming audio from the current tab
-    recordIncomingStream(tabId, recordingTimeout);
+    recordIncomingStream(tabId, recordingTimeout, filepath);
     // capture the outgoing audio from the microphone
     sendToTab(tabId, {
       action: "capture-microphone",
@@ -66,7 +53,14 @@ function startRecording(tabId, recordingTimeout) {
   }
 }
 
-function recordIncomingStream(tabId, recordingTimeout) {
+function recordIncomingStream(tabId, recordingTimeout, filepath) {
+  var callback = function(audioUrl) {
+    var filename = filepath + '-incoming.ogg'
+    s3.uploadBlobURI(audioUrl, filename, 'audio/ogg');
+    sendToTab(tabId, { action: 'show-audio-download', blob: audioUrl, name: filename});
+  };
+  recorders[tabId] = new AudioRecorder('worker.js', callback);
+
   chrome.tabCapture.capture({audio: true, video: false}, function (stream) {
     window.audio = document.createElement("audio");
     window.audio.src = window.URL.createObjectURL(stream);
