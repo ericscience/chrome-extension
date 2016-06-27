@@ -1,3 +1,6 @@
+var iframe;   // This is the iframe we use to display content on the page
+var recorder; // This is the recorder for capturing the microphone
+
 // This is a roundabout way of injecting the worker script to an accessible location
 var workerUrl;
 var x = new XMLHttpRequest();
@@ -25,7 +28,36 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   }
 });
 
-var iframe;
+function captureMicrophone(recordingTimeout, filepath) {
+  navigator.webkitGetUserMedia({audio: true}, function (stream) {
+    var callback = function (audioUrl) {
+      // TODO: Uncomment when server is ready
+      var filename = filepath + '-outgoing.ogg'
+      console.log('filename: ', filename)
+      chrome.extension.sendMessage({ action: "uploadToS3", blob: audioUrl, name: filename });
+      showAudioDownload(audioUrl, filename);
+    }
+    recorder = new AudioRecorder(workerUrl, callback);
+    recorder.recordWithTimeout(stream, recordingTimeout);
+  }, function(err){});
+}
+
+function showAudioDownload(localUrl, name) {
+  // assuming that you've got a valid blob:chrome-extension-URL...
+  var x = new XMLHttpRequest();
+  x.open('GET', localUrl);
+  x.responseType = 'blob';
+  x.onload = function() {
+    console.log(name,x.response)
+    var url = URL.createObjectURL(x.response);
+    var filename =  name;
+    // var KB = Math.round(file.length / 1024.0 * 100) / 100;
+    var anchor =  '<div><a download="'+filename+'" href="' +
+        url + '">'+filename+'</a></div>';
+    iframe.contentWindow.document.getElementById("incoming-audio").innerHTML += anchor;
+  };
+  x.send();
+}
 
 function appendIframe() {
   // ask for the user's permission to use the microphone on the first attempt
@@ -88,56 +120,22 @@ function appendIframe() {
       <button id="stop">Stop Recording</button> \
       <div id="incoming-audio"></div>';
 
-    iframe.contentWindow.document.getElementById("start").addEventListener('click', start);
-    iframe.contentWindow.document.getElementById("stop").addEventListener('click', stop);
+    iframe.contentWindow.document.getElementById("start").addEventListener('click', startRecording);
+    iframe.contentWindow.document.getElementById("stop").addEventListener('click', stopRecording);
   }
 }
 
-function start() {
+// Start recording audio
+function startRecording() {
   iframe.contentWindow.document.getElementById("incoming-audio").innerHTML = '';
   var timeoutSeconds = iframe.contentWindow.document.getElementById("timeout").value;
   chrome.extension.sendMessage({ action: "startRecording", timeoutSeconds: timeoutSeconds });
 }
 
-var recorder;
-
-function stop() {
+// Stop recording audio
+function stopRecording() {
   chrome.extension.sendMessage({ action: "stopRecording" });
   if (recorder) {
     recorder.stopRecording();
   }
-}
-
-
-function captureMicrophone(recordingTimeout, filepath) {
-  navigator.webkitGetUserMedia({audio: true}, function (stream) {
-    var callback = function (audioUrl) {
-      // TODO: Uncomment when server is ready
-      var filename = filepath + '-outgoing.ogg'
-      console.log('filename: ', filename)
-      chrome.extension.sendMessage({ action: "uploadToS3", blob: audioUrl, name: filename });
-      showAudioDownload(audioUrl, filename);
-    }
-    recorder = new AudioRecorder(workerUrl, callback);
-    recorder.recordWithTimeout(stream, recordingTimeout);
-  }, function(err){});
-}
-
-function showAudioDownload(localUrl, name) {
-
-  // assuming that you've got a valid blob:chrome-extension-URL...
-  var x = new XMLHttpRequest();
-  x.open('GET', localUrl);
-  x.responseType = 'blob';
-  x.onload = function() {
-    console.log(name,x.response)
-    var url = URL.createObjectURL(x.response);
-    var filename =  name;
-    // var KB = Math.round(file.length / 1024.0 * 100) / 100;
-    var anchor =  '<div><a download="'+filename+'" href="' +
-        url + '">'+filename+'</a></div>';
-    iframe.contentWindow.document.getElementById("incoming-audio").innerHTML += anchor;
-  };
-  x.send();
-
 }
