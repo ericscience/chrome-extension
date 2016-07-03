@@ -1,7 +1,7 @@
 {
   "name" : "Repup Recorder",
   "author": "Eric Garcia",
-  "version" : "0.0.3",
+  "version" : "0.0.4",
   "manifest_version" : 2,
   "description" : "Record the audio from a call and upload it",
   "background": {
@@ -19,7 +19,7 @@
   ],
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "browser_action" : {
-		"default_icon" : "images/tabCapture22.png",
+		"default_icon" : "images/icon22.png",
 		"default_title" : "Record this tab"
 	},
   "permissions": [
