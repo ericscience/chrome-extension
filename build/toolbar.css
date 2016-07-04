@@ -1,0 +1,26 @@
+#repupSidebar {
+  position: fixed;
+  width: 100%;
+  border:none;
+  z-index: 2147483647;
+  top: 0px;
+  right: 0px;
+  left: 0px;
+  background-color: #aaaaaa
+}
+
+img.profile-pic {
+  float: left;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  -webkit-border-radius: 50%; /* Can also be 55px */
+  -moz-border-radius: 50%;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.profile-name {
+  padding-top: 4px;
+  float:left;
+}

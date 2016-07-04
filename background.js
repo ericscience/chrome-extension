@@ -15,13 +15,14 @@ chrome.browserAction.onClicked.addListener(function (tab) {
     if (err) {
       console.error(err)
     } else {
-      var thisUser = JSON.parse(info);
-      user.id = thisUser.id;
+      user = JSON.parse(info);
+      console.log(user)
+      var tabId = tab.id
+      sendToTab(tabId, { action: 'append-iframe', user: user});
     }
   });
 
-  var tabId = tab.id
-  sendToTab(tabId, { action: 'append-iframe'});
+
 });
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {

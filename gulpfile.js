@@ -1,16 +1,17 @@
-var $             = require('gulp-load-plugins')({ lazy: true });
-var gulp          = require('gulp');
+var $     = require('gulp-load-plugins')({ lazy: true });
+var gulp  = require('gulp');
 
 var paths = {
   background: [
     'lib/s3.js',
     'lib/audiorecorder.js',
-    'lib/authenticatedXhr.js',
+    'lib/chrome-helpers.js',
     'background.js'
   ],
   contentscript: [
     'lib/jquery-2.2.0.min.js',
     'lib/audiorecorder.js',
+    'lib/chrome-helpers.js',
     'contentscript.js'
   ],
   worker: [
