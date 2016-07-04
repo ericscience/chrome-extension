@@ -1,4 +1,29 @@
-<button id="start">Start Recording</button>
-<button id="stop">Stop Recording</button>
-<div id="incoming-audio"></div>
-<img class="profile-pic" src="{userImage}"/>
+<html>
+  <head>
+    <style>
+      /*background-color: #aaaaaa*/
+
+      img.profile-pic {
+        float: left;
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        -webkit-border-radius: 50%; /* Can also be 55px */
+        -moz-border-radius: 50%;
+        border-radius: 50%;
+        margin-right: 5px;
+      }
+
+      .profile-name {
+        padding-top: 4px;
+        float:left;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="start">Start Recording</button>
+    <button id="stop">Stop Recording</button>
+    <div id="incoming-audio"></div>
+    <img class="profile-pic" src="{userImage}"/>
+  </body>
+</html>

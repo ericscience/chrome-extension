@@ -79,15 +79,6 @@ function appendIframe(user) {
 
       iframe.contentWindow.document.getElementById("start").addEventListener('click', startRecording);
       iframe.contentWindow.document.getElementById("stop").addEventListener('click', stopRecording);
-
-      loadChromeFile('toolbar.css', 'text/css', function (cssFile) {
-        var cssLink = document.createElement("link");
-        console.log(cssFile)
-        cssLink.href = URL.createObjectURL(cssFile);
-        cssLink.rel = "stylesheet";
-        cssLink .type = "text/css";
-        iframe.contentWindow.document.body.appendChild(cssLink);
-      });
     });
   }
 }

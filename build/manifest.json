@@ -11,12 +11,11 @@
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["contentscript.js"],
-      "css": ["toolbar.css"]
+      "js": ["contentscript.js"]
     }
   ],
   "web_accessible_resources": [
-    "worker.js", "toolbar.html", "toolbar.css"
+    "worker.js", "toolbar.html"
   ],
   "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
   "browser_action" : {
