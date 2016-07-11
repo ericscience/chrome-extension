@@ -19,6 +19,7 @@ chrome.browserAction.onClicked.addListener(function (tab) {
       console.log(user)
       var tabId = tab.id
       sendToTab(tabId, { action: 'append-iframe', user: user});
+      sendToTab(tabId, { action: 'add-listener'});
     }
   });
 
@@ -34,10 +35,15 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
     startRecording(tabId, filepath);
   }
   if (msg.action == 'stop-recording') {
-    recorders[tabId].stopRecording();
+    if (recorders[tabId]) {
+      recorders[tabId].stopRecording();
+    }
   }
   if (msg.action == 'upload-to-s3') {
     s3.uploadBlobURI(msg.blob, msg.name, 'audio/ogg');
+  }
+  if (msg.action == 'logout') {
+    revokeToken();
   }
 });
 

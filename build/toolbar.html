@@ -1,9 +1,18 @@
 <html>
   <head>
     <style>
-      /*background-color: #aaaaaa*/
+      body {
+        background-color: #ffffff
+      }
 
-      img.profile-pic {
+      .profile {
+        float: right;
+        font-family: "Open Sans", "Helvetica Neue", Helvetica, sans-serif;
+        font-size: 14;
+        cursor: pointer;
+      }
+
+      .profile-pic {
         float: left;
         width: 20px;
         height: 20px;
@@ -15,15 +24,28 @@
       }
 
       .profile-name {
-        padding-top: 4px;
+        padding-top: 2px;
         float:left;
+      }
+      .arrow-down {
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid #000;
+        float: left;
+        margin: 9 0 0 3;
       }
     </style>
   </head>
   <body>
-    <button id="start">Start Recording</button>
-    <button id="stop">Stop Recording</button>
-    <div id="incoming-audio"></div>
-    <img class="profile-pic" src="{userImage}"/>
+    <div class="toolbar">
+      <div id="profile-menu" class="profile">
+        <img class="profile-pic" src="{userImage}"/>
+        <div class="profile-name"> {userEmail} </div>
+        <div class="arrow-down"></div>
+      </div>
+      <div id="incoming-audio"></div>
+    </div>
   </body>
 </html>

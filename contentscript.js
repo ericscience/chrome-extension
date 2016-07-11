@@ -13,9 +13,12 @@ loadChromeFile('worker.js', 'text/javascript', function (file) {
   workerUrl = window.URL.createObjectURL(file);
 });
 
-// event listeners
+// background event listeners
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   console.log(msg)
+  if (msg.action == "add-listener") {
+    addHubspotListener();
+  }
   if (msg.action == "append-iframe") {
     appendIframe(msg.user);
   }
@@ -28,6 +31,42 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
     showAudioDownload(msg.blob, msg.name)
   }
 });
+
+function addHubspotListener() {
+  // set up a small scrip to send the twilio connection status
+  function pingTwilioConnectionStatus() {
+    window.setInterval(function () {
+      var events = (((window.hubspot || {}).twilio || {}).phoneCallEventBus || {})._events;
+      var deviceReady = ((events || {})['twilio:device:ready'] || {})[0];
+      var connection = (((deviceReady || {}).context || {}).twilioDeviceClient || {}).connection;
+      if (connection) {
+        window.postMessage({ type: "twilio-ping", status: connection._status }, "*");
+      }
+    }, 1000);
+  }
+
+  // inject the script into the webpage
+  var script = document.createElement('script');
+  script.appendChild(document.createTextNode('('+ pingTwilioConnectionStatus +')();'));
+  (document.body || document.head || document.documentElement).appendChild(script);
+
+  // start/stop recording based on twilio conncetion status
+  var isRecording = false;
+  window.addEventListener("message", function(event) {
+    // We only accept messages from ourselves
+    if (event.source === window && (event.data.type == "twilio-ping")) {
+      console.log("Twilio connection status: " + event.data.status);
+      if (event.data.status == "open" && isRecording === false) {
+        isRecording = true;
+        startRecording()
+      }
+      if (event.data.status == "closed" && isRecording === true)  {
+        isRecording = false;
+        stopRecording()
+      }
+    }
+  }, false);
+}
 
 function captureMicrophone(recordingTimeout, filepath) {
   navigator.webkitGetUserMedia({audio: true}, function (stream) {
@@ -66,19 +105,20 @@ function appendIframe(user) {
   }, function(err){});
 
   //height of top bar, or width in your case
-  var height = '100px';
+  var height = '50px';
   var iframeId = 'repupSidebar';
   if (!document.getElementById(iframeId)) {
     createToolbar(iframeId, height);
     loadChromeContent('toolbar.html', function (template) {
-      console.log('user: ', user)
       iframe = document.getElementById(iframeId);
       iframe.contentDocument.body.innerHTML = template.supplant({
-        userImage: user.picture
+        userImage: user.picture,
+        userEmail: user.email
       });
 
-      iframe.contentWindow.document.getElementById("start").addEventListener('click', startRecording);
-      iframe.contentWindow.document.getElementById("stop").addEventListener('click', stopRecording);
+      iframe.contentWindow.document.getElementById("profile-menu").addEventListener('click', function () {
+        chrome.extension.sendMessage({ action: "logout"});
+      });
     });
   }
 }
