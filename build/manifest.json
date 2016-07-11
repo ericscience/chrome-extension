@@ -1,5 +1,6 @@
 {
-  "name" : "Repup Recorder",
+  "name" : "Repup Hubspot Recorder",
+  "short_name": "RepupHubspot",
   "author": "Eric Garcia",
   "version" : "0.0.4",
   "manifest_version" : 2,

@@ -10,20 +10,27 @@ function getFilename(filepath) {
   return filename;
 }
 
+var activeIframes = {}
 chrome.browserAction.onClicked.addListener(function (tab) {
-  authenticatedXhr('GET', 'https://www.googleapis.com/userinfo/v2/me', function(err,status,info) {
-    if (err) {
-      console.error(err)
-    } else {
-      user = JSON.parse(info);
-      console.log(user)
-      var tabId = tab.id
-      sendToTab(tabId, { action: 'append-iframe', user: user});
-      sendToTab(tabId, { action: 'add-listener'});
-    }
-  });
-
-
+  if (activeIframes[tab] === 'visible') {
+    activeIframes[tab] = 'hidden';
+    sendToTab(tab.id, { action: 'hide-iframe' });
+  } else if (activeIframes[tab] === 'hidden') {
+    activeIframes[tab] = 'visible';
+    sendToTab(tab.id, { action: 'show-iframe' });
+  } else {
+    activeIframes[tab] = 'visible';
+    authenticatedXhr('GET', 'https://www.googleapis.com/userinfo/v2/me', function(err,status,info) {
+      if (err) {
+        console.error(err)
+      } else {
+        user = JSON.parse(info);
+        console.log(user)
+        sendToTab(tab.id, { action: 'append-iframe', user: user});
+        sendToTab(tab.id, { action: 'add-listener'});
+      }
+    });
+  }
 });
 
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
@@ -37,6 +44,7 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   if (msg.action == 'stop-recording') {
     if (recorders[tabId]) {
       recorders[tabId].stopRecording();
+      var filePartCount = 0;
     }
   }
   if (msg.action == 'upload-to-s3') {

@@ -1,4 +1,7 @@
 var iframe;   // This is the iframe we use to display content on the page
+var height = '50px';
+var iframeId = 'repupToolbar';
+
 var recorder; // This is the recorder for capturing the microphone
 var filePartCount = 0;
 function getFilename(filepath) {
@@ -21,6 +24,12 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   }
   if (msg.action == "append-iframe") {
     appendIframe(msg.user);
+  }
+  if (msg.action == "hide-iframe") {
+    hideToolbar(iframe, height);
+  }
+  if (msg.action == "show-iframe") {
+    showToolbar(iframe, height);
   }
   if (msg.action == "already-running") {
   }
@@ -105,8 +114,6 @@ function appendIframe(user) {
   }, function(err){});
 
   //height of top bar, or width in your case
-  var height = '50px';
-  var iframeId = 'repupSidebar';
   if (!document.getElementById(iframeId)) {
     createToolbar(iframeId, height);
     loadChromeContent('toolbar.html', function (template) {
@@ -134,5 +141,6 @@ function stopRecording() {
   chrome.extension.sendMessage({ action: "stop-recording" });
   if (recorder) {
     recorder.stopRecording();
+    filePartCount = 0;
   }
 }
