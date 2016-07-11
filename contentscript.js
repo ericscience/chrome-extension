@@ -25,11 +25,8 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   if (msg.action == "append-iframe") {
     appendIframe(msg.user);
   }
-  if (msg.action == "hide-iframe") {
-    hideToolbar(iframe, height);
-  }
-  if (msg.action == "show-iframe") {
-    showToolbar(iframe, height);
+  if (msg.action == "toggle-iframe") {
+    toggleIframe();
   }
   if (msg.action == "already-running") {
   }
@@ -40,6 +37,16 @@ chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
     showAudioDownload(msg.blob, msg.name)
   }
 });
+
+function toggleIframe() {
+  if (!iframe) {
+    chrome.extension.sendMessage({ action: "initialize-iframe"});
+  } else if (iframe.style.display === "none") {
+    showToolbar(iframe, height);
+  } else {
+    hideToolbar(iframe, height);
+  }
+}
 
 function addHubspotListener() {
   // set up a small scrip to send the twilio connection status
