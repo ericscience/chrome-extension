@@ -1,7 +1,6 @@
 var iframe;   // This is the iframe we use to display content on the page
 var height = '50px';
 var iframeId = 'repupToolbar';
-var connectionPingMilliseconds = 5000;
 var isRecording = false;
 
 var recorder; // This is the recorder for capturing the microphone
@@ -62,7 +61,7 @@ function addHangoutsListener() {
     } else {
       window.postMessage({ type: "connection-ping", status: "closed" }, "*");
     }
-  }, connectionPingMilliseconds);
+  }, 5000);
 }
 
 function addHubspotListener() {
@@ -75,7 +74,7 @@ function addHubspotListener() {
       if (connection) {
         window.postMessage({ type: "connection-ping", status: connection._status }, "*");
       }
-    }, connectionPingMilliseconds);
+    }, 5000);
   }
   // inject the script into the webpage
   var script = document.createElement('script');

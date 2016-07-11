@@ -64,8 +64,9 @@ function matchValidSiteAndInitializeIframe(tab) {
   var hangoutsRegex = new RegExp(/.*hangouts\.google\.com.*/gi);
   var hubspotRegex = new RegExp(/.*app\.hubspot\.com.*/gi);
   if (tab.url.match(hangoutsRegex)) {
-    googleHangoutsExtension.disable();
-    initializeIframe(tab, 'hangouts');
+    googleHangoutsExtension.disable(function () {
+      initializeIframe(tab, 'hangouts');
+    });
   } else if (tab.url.match(hubspotRegex)){
     initializeIframe(tab, 'hubspot');
   }

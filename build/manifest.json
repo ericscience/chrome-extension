@@ -1,10 +1,10 @@
 {
-  "name" : "RepUp Hubspot Recorder",
-  "short_name": "RepupHubspot",
+  "name" : "RepUp Toolbar",
+  "short_name": "RepupToolbar",
   "author": "Eric Garcia",
-  "version" : "0.0.6",
+  "version" : "0.1.0",
   "manifest_version" : 2,
-  "description" : "Get feedback on your sales calls in Hubspot",
+  "description" : "Get feedback on your sales calls in Hangouts and Hubspot",
   "background": {
     "scripts": ["background.js"],
 	  "persistent": false
