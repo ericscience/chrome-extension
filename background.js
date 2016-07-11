@@ -16,14 +16,14 @@ var googleHangoutsExtension = {
   enabled: undefined,
   disable: function (callback) {
     chrome.management.get(googleHangoutsExtension.id, function (extension) {
-      if (googleHangoutsExtension.enabled === undefined) {
+      if ("undefined" === typeof googleHangoutsExtension.enabled) {
         googleHangoutsExtension.enabled = extension.enabled
       }
       chrome.management.setEnabled(googleHangoutsExtension.id, false, callback);
     })
   },
   resetState: function (tabId, callback) {
-    if (googleHangoutsExtension.enabled !== undefined) {
+    if ("undefined" !== googleHangoutsExtension.enabled) {
       chrome.management.setEnabled(googleHangoutsExtension.id, this.enabled, callback)
     }
   }
