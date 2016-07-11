@@ -58,7 +58,7 @@ function addHubspotListener() {
       if (connection) {
         window.postMessage({ type: "twilio-ping", status: connection._status }, "*");
       }
-    }, 1000);
+    }, 5000);
   }
 
   // inject the script into the webpage
@@ -71,7 +71,7 @@ function addHubspotListener() {
   window.addEventListener("message", function(event) {
     // We only accept messages from ourselves
     if (event.source === window && (event.data.type == "twilio-ping")) {
-      console.log("Twilio connection status: " + event.data.status);
+      // console.log("Twilio connection status: " + event.data.status);
       if (event.data.status == "open" && isRecording === false) {
         isRecording = true;
         startRecording()
