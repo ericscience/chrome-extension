@@ -1,6 +1,8 @@
 var iframe;   // This is the iframe we use to display content on the page
 var height = '50px';
 var iframeId = 'repupToolbar';
+var connectionPingMilliseconds = 5000;
+var isRecording = false;
 
 var recorder; // This is the recorder for capturing the microphone
 var filePartCount = 0;
@@ -20,7 +22,11 @@ loadChromeFile('worker.js', 'text/javascript', function (file) {
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
   console.log(msg)
   if (msg.action == "add-listener") {
-    addHubspotListener();
+    if (msg.site === "hubspot") {
+      addHubspotListener();
+    } else if (msg.site === "hangouts") {
+      addHangoutsListener();
+    }
   }
   if (msg.action == "append-iframe") {
     appendIframe(msg.user);
@@ -48,6 +54,17 @@ function toggleIframe() {
   }
 }
 
+// hangouts: $('div.talk_chat_widget').
+function addHangoutsListener() {
+  window.setInterval(function () {
+    if ($('div.talk_chat_widget').css('width') > '1px') {
+      window.postMessage({ type: "connection-ping", status: "open" }, "*");
+    } else {
+      window.postMessage({ type: "connection-ping", status: "closed" }, "*");
+    }
+  }, connectionPingMilliseconds);
+}
+
 function addHubspotListener() {
   // set up a small scrip to send the twilio connection status
   function pingTwilioConnectionStatus() {
@@ -56,33 +73,28 @@ function addHubspotListener() {
       var deviceReady = ((events || {})['twilio:device:ready'] || {})[0];
       var connection = (((deviceReady || {}).context || {}).twilioDeviceClient || {}).connection;
       if (connection) {
-        window.postMessage({ type: "twilio-ping", status: connection._status }, "*");
+        window.postMessage({ type: "connection-ping", status: connection._status }, "*");
       }
-    }, 5000);
+    }, connectionPingMilliseconds);
   }
-
   // inject the script into the webpage
   var script = document.createElement('script');
   script.appendChild(document.createTextNode('('+ pingTwilioConnectionStatus +')();'));
   (document.body || document.head || document.documentElement).appendChild(script);
-
-  // start/stop recording based on twilio conncetion status
-  var isRecording = false;
-  window.addEventListener("message", function(event) {
-    // We only accept messages from ourselves
-    if (event.source === window && (event.data.type == "twilio-ping")) {
-      // console.log("Twilio connection status: " + event.data.status);
-      if (event.data.status == "open" && isRecording === false) {
-        isRecording = true;
-        startRecording()
-      }
-      if (event.data.status == "closed" && isRecording === true)  {
-        isRecording = false;
-        stopRecording()
-      }
-    }
-  }, false);
 }
+
+// start/stop recording based on conncetion status
+
+window.addEventListener("message", function(event) {
+  if (event.source === window && (event.data.type == "connection-ping")) {
+    if (event.data.status == "open" && isRecording === false) {
+      startRecording();
+    }
+    if (event.data.status == "closed" && isRecording === true)  {
+      stopRecording();
+    }
+  }
+}, false);
 
 function captureMicrophone(recordingTimeout, filepath) {
   navigator.webkitGetUserMedia({audio: true}, function (stream) {
@@ -139,12 +151,14 @@ function appendIframe(user) {
 
 // Start recording audio
 function startRecording() {
+  isRecording = true;
   iframe.contentWindow.document.getElementById("incoming-audio").innerHTML = '';
   chrome.extension.sendMessage({ action: "start-recording"});
 }
 
 // Stop recording audio
 function stopRecording() {
+  isRecording = false;
   chrome.extension.sendMessage({ action: "stop-recording" });
   if (recorder) {
     recorder.stopRecording();

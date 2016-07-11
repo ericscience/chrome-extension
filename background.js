@@ -10,32 +10,81 @@ function getFilename(filepath) {
   return filename;
 }
 
-chrome.browserAction.onClicked.addListener(function (tab) {
-  sendToTab(tab.id, { action: 'toggle-iframe' });
+// disable the google hangouts extension when we open this extension
+var googleHangoutsExtension = {
+  id : "knipolnnllmklapflnccelgolnpehhpl",
+  enabled: undefined,
+  disable: function (callback) {
+    chrome.management.get(googleHangoutsExtension.id, function (extension) {
+      if (googleHangoutsExtension.enabled === undefined) {
+        googleHangoutsExtension.enabled = extension.enabled
+      }
+      chrome.management.setEnabled(googleHangoutsExtension.id, false, callback);
+    })
+  },
+  resetState: function (tabId, callback) {
+    if (googleHangoutsExtension.enabled !== undefined) {
+      chrome.management.setEnabled(googleHangoutsExtension.id, this.enabled, callback)
+    }
+  }
+}
+
+// reset the state of the google hangouts extension if we change this tab
+var activeTabs = {}
+chrome.tabs.onRemoved.addListener(function (tabId) {
+  if (activeTabs[tabId]) {
+    googleHangoutsExtension.resetState();
+  }
 });
 
+chrome.tabs.onUpdated.addListener(function (tabId) {
+  if (activeTabs[tabId]) {
+    googleHangoutsExtension.resetState();
+  }
+});
+
+chrome.browserAction.onClicked.addListener(function (tab) {
+  activeTabs[tab.id] = true;
+  sendToTab(tab.id, { action: 'toggle-iframe'});
+});
+
+function initializeIframe(tab, site) {
+  authenticatedXhr('GET', 'https://www.googleapis.com/userinfo/v2/me', function(err,status,info) {
+    if (err) {
+      console.error(err)
+    } else {
+      user = JSON.parse(info);
+      sendToTab(tab.id, { action: 'append-iframe', user: user });
+      sendToTab(tab.id, { action: 'add-listener', site: site });
+    }
+  });
+}
+
+function matchValidSiteAndInitializeIframe(tab) {
+  var hangoutsRegex = new RegExp(/.*hangouts\.google\.com.*/gi);
+  var hubspotRegex = new RegExp(/.*app\.hubspot\.com.*/gi);
+  if (tab.url.match(hangoutsRegex)) {
+    googleHangoutsExtension.disable();
+    initializeIframe(tab, 'hangouts');
+  } else if (tab.url.match(hubspotRegex)){
+    initializeIframe(tab, 'hubspot');
+  }
+}
+
 chrome.extension.onMessage.addListener(function(msg, sender, sendResponse) {
-  var tabId = sender.tab.id;
-  console.log(msg,' from tabId:', tabId)
+  var tab = sender.tab;
+  console.log(msg,' from tabId:', sender.tab.id);
   if (msg.action == 'initialize-iframe') {
-    authenticatedXhr('GET', 'https://www.googleapis.com/userinfo/v2/me', function(err,status,info) {
-      if (err) {
-        console.error(err)
-      } else {
-        user = JSON.parse(info);
-        sendToTab(tabId, { action: 'append-iframe', user: user});
-        sendToTab(tabId, { action: 'add-listener'});
-      }
-    });
+    matchValidSiteAndInitializeIframe(tab);
   }
   if (msg.action == 'start-recording') {
     var timestamp = Math.round(new Date().getTime() / 1000);
     var filepath = user.id + '/' + timestamp;
-    startRecording(tabId, filepath);
+    startRecording(tab.id, filepath);
   }
   if (msg.action == 'stop-recording') {
-    if (recorders[tabId]) {
-      recorders[tabId].stopRecording();
+    if (recorders[tab.id]) {
+      recorders[tab.id].stopRecording();
       var filePartCount = 0;
     }
   }

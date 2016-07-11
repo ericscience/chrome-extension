@@ -2,16 +2,16 @@
   "name" : "RepUp Hubspot Recorder",
   "short_name": "RepupHubspot",
   "author": "Eric Garcia",
-  "version" : "0.0.5",
+  "version" : "0.0.6",
   "manifest_version" : 2,
-  "description" : "Record the audio from a call and upload it",
+  "description" : "Get feedback on your sales calls in Hubspot",
   "background": {
     "scripts": ["background.js"],
 	  "persistent": false
   },
   "content_scripts": [
     {
-      "matches": ["*://*.hubspot.com/*"],
+      "matches": ["*://*/*"],
       "js": ["contentscript.js"]
     }
   ],
@@ -24,7 +24,7 @@
 		"default_title" : "Record this tab"
 	},
   "permissions": [
-    "activeTab", "tabCapture", "identity"
+    "activeTab", "tabCapture", "identity", "management"
   ],
   "oauth2": {
     "client_id": "424830153201-lt8ph83tqhs4ccr16vk00bes20os7ftd.apps.googleusercontent.com",
