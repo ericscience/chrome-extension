@@ -2,7 +2,7 @@
   "name" : "RepUp Toolbar",
   "short_name": "RepupToolbar",
   "author": "Eric Garcia",
-  "version" : "0.1.1",
+  "version" : "0.1.2",
   "manifest_version" : 2,
   "description" : "Get feedback on your sales calls in Hangouts and Hubspot",
   "background": {

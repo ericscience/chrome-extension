@@ -61,25 +61,19 @@ function addHangoutsListener() {
     } else {
       window.postMessage({ type: "connection-ping", status: "closed" }, "*");
     }
-  }, 5000);
+  }, 2000);
 }
 
 function addHubspotListener() {
-  // set up a small scrip to send the twilio connection status
-  function pingTwilioConnectionStatus() {
-    window.setInterval(function () {
-      var events = (((window.hubspot || {}).twilio || {}).phoneCallEventBus || {})._events;
-      var deviceReady = ((events || {})['twilio:device:ready'] || {})[0];
-      var connection = (((deviceReady || {}).context || {}).twilioDeviceClient || {}).connection;
-      if (connection) {
-        window.postMessage({ type: "connection-ping", status: connection._status }, "*");
-      }
-    }, 5000);
-  }
-  // inject the script into the webpage
-  var script = document.createElement('script');
-  script.appendChild(document.createTextNode('('+ pingTwilioConnectionStatus +')();'));
-  (document.body || document.head || document.documentElement).appendChild(script);
+  window.setInterval(function () {
+    console.log("checking for call")
+    if ($('button i18n-string[data-key="twilio.calling.callActionsBar.hangUp"]').length > 0) {
+      console.log("call started")
+      window.postMessage({ type: "connection-ping", status: "open" }, "*");
+    } else {
+      window.postMessage({ type: "connection-ping", status: "closed" }, "*");
+    }
+  }, 2000);
 }
 
 // start/stop recording based on conncetion status
